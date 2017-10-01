@@ -2,7 +2,7 @@
   "name": "modal-demo",
   "version": "0.0.1",
   "private": true,
-  "homepage": "http://touqeerkhan11.github.io/portaldemo",
+  "homepage": "https://touqeerkhan11.github.io/react-portal-example/",
   "dependencies": {
     "gh-pages": "^1.0.0",
     "prop-types": "^15.6.0",
