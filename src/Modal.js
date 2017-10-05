@@ -1,67 +1,69 @@
 import React, { Component } from 'react';
 import ReactDOM from 'react-dom';
 import PropTypes from 'prop-types';
-import { spring, Motion, TransitionMotion, presets } from 'react-motion';
+import { spring, Motion, presets } from 'react-motion';
 
 const modalRoot = document.getElementById('modal-root');
 
-class Modal extends Component {
+class UIModal extends Component {
   static propTypes = {
     children: PropTypes.any.isRequired,
     show: PropTypes.bool.isRequired,
-    onHide: PropTypes.func.isRequired
+    onHide: PropTypes.func.isRequired,
+    className: PropTypes.string
   };
+
+  static defaultProps = {
+    className: null
+  };
+
+  static scrollPositions = {};
+  static hasVScroll = {};
 
   constructor(props) {
     super(props);
-    this.state = { dialog: [{ key: 'k1' }] };
     this.el = document.createElement('div');
+
+    this.handleDocumentKeyDown = this.handleDocumentKeyDown.bind(this);
+    this.handleDialogClick = this.handleDialogClick.bind(this);
   }
 
   componentDidMount() {
     modalRoot.appendChild(this.el);
   }
 
+  componentWillUpdate() {
+    this.scrollPositions = { x: window.pageXOffset, y: window.pageYOffset };
+    this.hasVScroll = { scroll: document.body.scrollHeight };
+  }
+
+  componentDidUpdate(prevProps) {
+    if (prevProps.show !== this.props.show && this.props.show) {
+      this.node.focus();
+      window.scroll(this.scrollPositions.x, this.scrollPositions.y);
+      document.body.classList.add('modal-open');
+      if (document.body.scrollHeight > this.hasVScroll.scroll) {
+        document.body.style.paddingRight = '15px';
+      }
+    }
+
+    if (!this.props.show) {
+      document.body.classList.remove('modal-open');
+      document.body.style = undefined;
+    }
+  }
+
   componentWillUnmount() {
     modalRoot.removeChild(this.el);
   }
 
-  getDefaultStyles = () => {
-    const { dialog } = this.state;
-    const { show } = this.props;
-    if (!show) return [];
-    return dialog.map(modal => ({ ...modal, style: { marginTop: -350, opacity: 0 } }));
-  };
-
-  getStyles = () => {
-    const { dialog } = this.state;
-    const { show } = this.props;
-    if (!show) return [];
-    return dialog.map((modal) => {
-      return {
-        ...modal,
-        style: {
-          marginTop: spring(0, presets.stiff),
-          opacity: spring(1, presets.stiff)
-        }
-      };
-    });
-  };
-
-  willEnter = () => {
-    return {
-      marginTop: -350,
-      opacity: 0
-    };
+  handleDocumentKeyDown(e) {
+    if (e.key === 'Escape') {
+      this.props.onHide();
+    }
   }
 
-  willLeave = () => {
-    return {
-      marginTop: spring(-350, { stiffness: 300, damping: 40 })
-    };
-  }
-
-  handleDialogClick = (e) => {
+  handleDialogClick(e) {
     if (e.target !== e.currentTarget) {
       return;
     }
@@ -70,54 +72,41 @@ class Modal extends Component {
 
   render() {
     const { show } = this.props;
+
     return ReactDOM.createPortal(
-      <div>
+      <div // eslint-disable-line
+        onKeyDown={this.handleDocumentKeyDown}
+      >
         {show ? (
           <Motion defaultStyle={{ x: 0 }} style={{ x: spring(show ? 0.5 : 0, presets.stiff) }}>
-            {(stuff) => {
-              return (
-                <div style={{ opacity: stuff.x }} className="modal-backdrop" />
-              );
-            }}
+            {things => (
+              <div ref={(node) => { this.node = node; }} style={{ opacity: things.x }} className="modal-backdrop" />
+            )}
           </Motion>
         ) : null}
 
-        <TransitionMotion
-          defaultStyles={this.getDefaultStyles()}
-          styles={this.getStyles()}
-          willLeave={this.willLeave}
-          willEnter={this.willEnter}
+        <Motion
+          defaultStyle={{ marginTop: -350 }}
+          style={{ marginTop: spring(show ? 1 : -350, presets.stiff) }}
         >
-          {styles => (
-            <div>
-              {styles.map(({ key, style }) => {
-                return (
-                  <div
-                    role="dialog"
-                    tabIndex={-1}
-                    className="modal"
-                    key={key}
-                    style={{ ...style, display: style.marginTop < -230 ? 'none' : 'block' }}
-                    onClick={this.handleDialogClick}
-                  >
-                    <div className="modal-lg modal-dialog">
-                      <div
-                        onClick={() => {}}
-                        className="modal-content"
-                        role="document"
-                      >
-                        {this.props.children}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+          { stuff => (
+            <div // eslint-disable-line
+              role="dialog"
+              tabIndex={-1}
+              className="modal"
+              style={{ marginTop: stuff.marginTop, display: stuff.marginTop < -230 ? 'none' : 'block' }}
+              onClick={this.handleDialogClick}
+            >
+              <div className={`modal-dialog ${this.props.className || 'modal-md'}`}>
+                <div className="modal-content" role="document">
+                  {this.props.children}
+                </div>
+              </div>
             </div>
           )}
-        </TransitionMotion>
-      </div>, this.el,
-      );
+        </Motion>
+      </div>, this.el);
   }
 }
 
-export default Modal;
+export default UIModal;
