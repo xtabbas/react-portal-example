@@ -74,13 +74,11 @@ class UIModal extends Component {
     const { show } = this.props;
 
     return ReactDOM.createPortal(
-      <div // eslint-disable-line
-        onKeyDown={this.handleDocumentKeyDown}
-      >
+      <div>
         {show ? (
           <Motion defaultStyle={{ x: 0 }} style={{ x: spring(show ? 0.5 : 0, presets.stiff) }}>
             {things => (
-              <div ref={(node) => { this.node = node; }} style={{ opacity: things.x }} className="modal-backdrop" />
+              <div role="button" tabIndex={0} onKeyDown={this.handleDocumentKeyDown} ref={(node) => { this.node = node; }} style={{ opacity: things.x }} className="modal-backdrop" />
             )}
           </Motion>
         ) : null}
